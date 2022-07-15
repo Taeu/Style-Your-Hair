@@ -8,7 +8,7 @@ Official Pytorch implementation of "Style Your Hair: Latent Optimization for Pos
 [Chaeyeon Chung*](https://github.com/ChennyTech),
 [Yoonseo Kim*](https://github.com/myoons),
 [Sunghyun Park](https://psh01087.github.io/),
-[Kangyeol Kim](https://github.com/kangyeolk), and 
+[Kangyeol Kim](https://kangyeolk.github.io/), and 
 [Jaegul Choo](https://sites.google.com/site/jaegulchoo/)<br/>
 `*` indicates equal contributions.
 
