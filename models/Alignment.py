@@ -59,6 +59,9 @@ class Alignment(nn.Module):
         self.load_downsampling()
         self.setup_align_loss_builder()
 
+        self.seg_mean = seg_mean.to(opts.device)
+        self.seg_std = seg_std.to(opts.device)
+
         if self.opts.kp_loss:
             # self.setup_align_loss_builder(no_face=False)
             if self.opts.kp_type =='2D':
@@ -70,7 +73,7 @@ class Alignment(nn.Module):
             self.l2 = torch.nn.MSELoss()
 
         ### perceptual loss
-        self.percept = lpips.PerceptualLoss(model="net-lin", net="vgg", use_gpu=True)
+        self.percept = lpips.PerceptualLoss(model="net-lin", net="vgg", use_gpu=self.opts.device == 'cuda')
         self.percept.eval()
         self.image_transform = transforms.Compose([
             transforms.ToTensor(),
@@ -89,7 +92,7 @@ class Alignment(nn.Module):
         # blend with alignment
         if self.opts.blend_with_align:
             self.percept_with_mask = masked_lpips.PerceptualLoss(
-                model="net-lin", net="vgg", vgg_blocks=['1', '2', '3'], use_gpu=True
+                model="net-lin", net="vgg", vgg_blocks=['1', '2', '3'], use_gpu=self.opts.device == 'cuda'
             )
             self.percept_with_mask.eval()
 
@@ -99,14 +102,14 @@ class Alignment(nn.Module):
 
         if not os.path.exists(self.opts.seg_ckpt):
             download_weight(self.opts.seg_ckpt)
-        self.seg.load_state_dict(torch.load(self.opts.seg_ckpt))
+        self.seg.load_state_dict(torch.load(self.opts.seg_ckpt, map_location=self.opts.device))
         for param in self.seg.parameters():
             param.requires_grad = False
         self.seg.eval()
 
     def load_downsampling(self):
-        self.downsample = BicubicDownSample(factor=self.opts.size // 512)
-        self.downsample_256 = BicubicDownSample(factor=self.opts.size // 256)
+        self.downsample = BicubicDownSample(factor=self.opts.size // 512, cuda=self.opts.device == 'cuda')
+        self.downsample_256 = BicubicDownSample(factor=self.opts.size // 256, cuda=self.opts.device == 'cuda')
 
     def setup_align_loss_builder(self, no_face=False):
         self.loss_builder = AlignLossBuilder(self.opts, no_face = no_face)
@@ -118,9 +121,9 @@ class Alignment(nn.Module):
     def preprocess_PILImg(self, im, is_downsampled = True):
         im = torchvision.transforms.ToTensor()(im)[:3].unsqueeze(0).to(self.opts.device)
         if is_downsampled:
-            im = (self.downsample(im).clamp(0, 1) - seg_mean) / seg_std
+            im = (self.downsample(im).clamp(0, 1) - self.seg_mean) / self.seg_std
         else:
-            im = (im.clamp(0,1) - seg_mean) / seg_std
+            im = (im.clamp(0,1) - self.seg_mean) / self.seg_std
         return im
 
     def get_img_and_seg_from_path(self, img_path, is_downsampled=True):
@@ -179,7 +182,7 @@ class Alignment(nn.Module):
             new_target_mean_seg = torch.where((new_target == 0) * (mean_seg != 0), mean_seg, new_target) ## 220213 edited by taeu
             if self.opts.save_all:
                 save_vis_mask(img_path1, img_path2, new_target_mean_seg.cpu(), self.opts.save_dir,count='1_warped_target+source_seg')
-            target_mask = new_target_mean_seg.unsqueeze(0).long().cuda()
+            target_mask = new_target_mean_seg.unsqueeze(0).long().to(self.opts.device)
 
         #####################  Save Visualization of Target Segmentation Mask
         if self.opts.save_all:
@@ -236,9 +239,9 @@ class Alignment(nn.Module):
         gen_im_0_1 = (gen_im + 1) / 2
         # get hair mask of synthesized image
         if is_downsampled:
-            im = (self.downsample(gen_im_0_1) - seg_mean) / seg_std
+            im = (self.downsample(gen_im_0_1) - self.seg_mean) / self.seg_std
         else:
-            im = (F.interpolate(gen_im_0_1, size=(512,512)) - seg_mean) / seg_std
+            im = (F.interpolate(gen_im_0_1, size=(512,512)) - self.seg_mean) / self.seg_std
         down_seg, _, _ = self.seg(im)
 
         if is_downsampled == False:
@@ -369,9 +372,9 @@ class Alignment(nn.Module):
                     ce_loss = 0
                 else:
                     if is_downsampled:
-                        im = (self.downsample(I_G_0_1) - seg_mean) / seg_std
+                        im = (self.downsample(I_G_0_1) - self.seg_mean) / self.seg_std
                     else:
-                        im = (F.interpolate(I_G_0_1, size=(512, 512)) - seg_mean) / seg_std
+                        im = (F.interpolate(I_G_0_1, size=(512, 512)) - self.seg_mean) / self.seg_std
                     down_seg, _, _ = self.seg(im)
                     ce_loss = self.loss_builder.cross_entropy_loss(down_seg, target_mask)  # 1, 16, 512, 512, 1
                     loss_dict["ce_loss"] = ce_loss.item()
@@ -474,7 +477,7 @@ class Alignment(nn.Module):
         #
         # latent_F_mixed = latent_F_out_new + interpolation_low.unsqueeze(0) * (latent_F_mixed - latent_F_out_new) # 2
         #
-        # free_mask = F.interpolate((hair_mask2.unsqueeze(0) * hair_mask_target).float(), size=(256, 256), mode='nearest').cuda()
+        # free_mask = F.interpolate((hair_mask2.unsqueeze(0) * hair_mask_target).float(), size=(256, 256), mode='nearest').to(self.opts.device
         # ##########################
         # _, free_mask = self.dilate_erosion(free_mask, device, dilate_erosion=self.opts.smooth)
         # ##########################
@@ -587,7 +590,7 @@ class Alignment(nn.Module):
 
         if im_path is not None:
             ref_im = Image.open(im_path).convert('RGB')
-            ref_im1024 = self.image_transform1024(ref_im).unsqueeze(0).cuda()
+            ref_im1024 = self.image_transform1024(ref_im).unsqueeze(0).to(self.opts.device)
         else:
             ref_im1024 = im1024
 
@@ -600,7 +603,7 @@ class Alignment(nn.Module):
         grid_mask256 = torch.zeros(n_seg, 1, slic_segments.shape[0], slic_segments.shape[1])  # 256
         for idx in range(n_seg):
             grid_mask256[idx][0][slic_segments == idx + 1] = 1
-        grid_mask256 = grid_mask256.cuda()
+        grid_mask256 = grid_mask256.to(self.opts.device)
 
         grid_mask1024 = F.interpolate(grid_mask256, size=(1024, 1024))  # 6, 1, 1024, 1024
 
@@ -643,13 +646,13 @@ class Alignment(nn.Module):
         # for style_loss
         ref_im = Image.open(img_path2).convert('RGB')
         ref_im256 = ref_im.resize((256, 256), PIL.Image.LANCZOS)
-        ref_im256 = self.image_transform(ref_im256).unsqueeze(0).cuda()
+        ref_im256 = self.image_transform(ref_im256).unsqueeze(0).to(self.opts.device)
 
         self.seg_transform = transforms.Compose([transforms.Resize((512, 512)),
                                                  transforms.ToTensor(),
                                                  transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                       std=[0.229, 0.224, 0.225])])
-        ref_im512 = self.seg_transform(ref_im).unsqueeze(0).cuda()
+        ref_im512 = self.seg_transform(ref_im).unsqueeze(0).to(self.opts.device)
         down_seg_ref, _, _ = self.seg(ref_im512)  # 512 512
         ref_seg = torch.argmax(down_seg_ref.clone().detach(), dim=1).long()
         seg_hair_ref = torch.where((ref_seg == 10), torch.ones_like(ref_seg),
