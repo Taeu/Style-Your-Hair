@@ -22,7 +22,7 @@ class Net(nn.Module):
             download_weight(self.opts.ckpt)
 
         print('Loading StyleGAN2 from checkpoint: {}'.format(self.opts.ckpt))
-        checkpoint = torch.load(self.opts.ckpt)
+        checkpoint = torch.load(self.opts.ckpt, map_location=self.opts.device)
         device = self.opts.device
         self.generator.load_state_dict(checkpoint['g_ema'])
         #import pdb; pdb.set_trace()

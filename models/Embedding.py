@@ -38,7 +38,7 @@ class Embedding(nn.Module):
 
     def load_downsampling(self):
         factor = self.opts.size // 256
-        self.downsample = BicubicDownSample(factor=factor)
+        self.downsample = BicubicDownSample(factor=factor, cuda=self.opts.device == 'cuda')
 
     def setup_W_optimizer(self):
 
@@ -50,14 +50,14 @@ class Embedding(nn.Module):
         }
         latent = []
         if (self.opts.tile_latent):
-            tmp = self.net.latent_avg.clone().detach().cuda()
+            tmp = self.net.latent_avg.clone().detach().to(self.opts.device)
             tmp.requires_grad = True
             for i in range(self.net.layer_num):
                 latent.append(tmp)
             optimizer_W = opt_dict[self.opts.opt_name]([tmp], lr=self.opts.learning_rate)
         else:
             for i in range(self.net.layer_num):
-                tmp = self.net.latent_avg.clone().detach().cuda()
+                tmp = self.net.latent_avg.clone().detach().to(self.opts.device)
                 tmp.requires_grad = True
                 latent.append(tmp)
             optimizer_W = opt_dict[self.opts.opt_name](latent, lr=self.opts.learning_rate)
@@ -107,9 +107,9 @@ class Embedding(nn.Module):
 
         def _setup_segmentation_network():
             seg = BiSeNet(n_classes=16)
-            seg.cuda(0)
+            seg.to(self.opts.device)
                 
-            seg.load_state_dict(torch.load('pretrained_models/seg.pth'))
+            seg.load_state_dict(torch.load('pretrained_models/seg.pth', map_location=self.opts.device))
             for param in seg.parameters():
                 param.requires_grad = False
             seg.eval()
@@ -154,7 +154,7 @@ class Embedding(nn.Module):
 
             target = cv2.copyMakeBorder(target, tp, bp, lp, rp, borderType=cv2.BORDER_CONSTANT, value=[127, 127, 127])
                     
-            target_pt = to_tensor(Image.fromarray(target).resize((512, 512), Image.BILINEAR)).unsqueeze(0).cuda(0)
+            target_pt = to_tensor(Image.fromarray(target).resize((512, 512), Image.BILINEAR)).unsqueeze(0).to(self.opts.device)
             out = seg(target_pt)[0]
             parsing = out.squeeze(0).cpu().numpy().argmax(0)
             parsing = cv2.resize(parsing, None, fx=2, fy=2, interpolation=cv2.INTER_NEAREST)[..., np.newaxis]

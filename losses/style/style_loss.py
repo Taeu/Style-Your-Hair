@@ -96,9 +96,6 @@ class StyleLoss(nn.Module):
         return loss
 
     def forward(self, x, x_hat, mask1=None, mask2=None):
-        x = x.cuda()
-        x_hat = x_hat.cuda()
-
         # resize images to 256px resolution
         N, C, H, W = x.shape
         upsample2d = nn.Upsample(

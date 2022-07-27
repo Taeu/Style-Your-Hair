@@ -22,11 +22,28 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
 
 
+def is_reconstructed(args: argparse.Namespace) -> bool:
+    W_embedding_dir = os.path.join(args.embedding_dir, "W+")
+    FS_embedding_dir = os.path.join(args.embedding_dir, "FS")
+
+    im_name_1 = os.path.splitext(os.path.basename(args.im_path1))[0]
+    im_name_2 = os.path.splitext(os.path.basename(args.im_path2))[0]
+
+    im1_W_exists = os.path.isfile(os.path.join(W_embedding_dir, f"{im_name_1}.npy"))
+    im2_W_exists = os.path.isfile(os.path.join(W_embedding_dir, f"{im_name_2}.npy"))
+    im1_FS_exists = os.path.isfile(os.path.join(FS_embedding_dir, f"{im_name_1}.npz"))
+    im2_FS_exists = os.path.isfile(os.path.join(FS_embedding_dir, f"{im_name_1}.npz"))
+
+    return im1_W_exists and im2_W_exists and im1_FS_exists and im2_FS_exists
+
+
 def main(args):
 
     set_seed(42)
 
-    if args.is_reconed == False:
+    if args.is_reconed:
+        assert is_reconstructed(args)
+    else:
         args.embedding_dir = args.output_dir
 
     ii2s = Embedding(args)
@@ -34,8 +51,9 @@ def main(args):
     im_path1 = os.path.join(args.input_dir, args.im_path1)
     im_path2 = os.path.join(args.input_dir, args.im_path2)
 
+    is_flip = False
     if args.flip_check:
-        im_path2, is_flip = flip_check(im_path1, im_path2)
+        im_path2, is_flip = flip_check(im_path1, im_path2, args.device)
 
     im_name_1 = os.path.splitext(os.path.basename(im_path1))[0]
     im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]

@@ -12,8 +12,8 @@ from .resnet import Resnet18
 
 import numpy as np
 
-seg_mean = torch.from_numpy(np.array([[0.485, 0.456, 0.406]])).float().cuda().reshape(1,3,1,1)
-seg_std = torch.from_numpy(np.array([[0.229, 0.224, 0.225]])).float().cuda().reshape(1,3,1,1)
+seg_mean = torch.from_numpy(np.array([[0.485, 0.456, 0.406]])).float().reshape(1,3,1,1)
+seg_std = torch.from_numpy(np.array([[0.229, 0.224, 0.225]])).float().reshape(1,3,1,1)
 seg_criterion = nn.CrossEntropyLoss()
 
 
