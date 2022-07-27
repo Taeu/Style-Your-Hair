@@ -35,7 +35,7 @@ def main(args):
     im_path2 = os.path.join(args.input_dir, args.im_path2)
 
     if args.flip_check:
-        im_path2, is_flip = flip_check(im_path1, im_path2)
+        im_path2, is_flip = flip_check(im_path1, im_path2, args.device)
 
     im_name_1 = os.path.splitext(os.path.basename(im_path1))[0]
     im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]
