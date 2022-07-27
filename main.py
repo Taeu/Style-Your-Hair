@@ -51,6 +51,7 @@ def main(args):
     im_path1 = os.path.join(args.input_dir, args.im_path1)
     im_path2 = os.path.join(args.input_dir, args.im_path2)
 
+    is_flip = False
     if args.flip_check:
         im_path2, is_flip = flip_check(im_path1, im_path2, args.device)
 
