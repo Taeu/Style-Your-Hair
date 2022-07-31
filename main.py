@@ -51,9 +51,8 @@ def main(args):
     im_path1 = os.path.join(args.input_dir, args.im_path1)
     im_path2 = os.path.join(args.input_dir, args.im_path2)
 
-    is_flip = False
     if args.flip_check:
-        im_path2, is_flip = flip_check(im_path1, im_path2, args.device)
+        im_path2 = flip_check(im_path1, im_path2, args.device)
 
     im_name_1 = os.path.splitext(os.path.basename(im_path1))[0]
     im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]
@@ -63,10 +62,6 @@ def main(args):
     if args.is_reconed == False:
         ii2s.invert_images_in_W([*im_set])
         ii2s.invert_images_in_FS([*im_set])
-    elif is_flip:
-        # flip image embedding
-        ii2s.invert_images_in_W([im_path2])
-        ii2s.invert_images_in_FS([im_path2])
 
     if args.save_all:
         args.save_dir = os.path.join(args.output_dir, f'{im_name_1}_{im_name_2}_{args.version}')

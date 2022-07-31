@@ -29,9 +29,9 @@ def flip_check(im_path1, im_path2, device):
         im2_flip = Image.fromarray(im2_flip)
         save_im_path2 = im_path2.replace(im_name_2, im_name_2 + '_flip')
         im2_flip.save(save_im_path2)
-        return save_im_path2, True
+        return save_im_path2
     print(f'cal. kp. diff. time : {time.time() - start_time}')
-    return im_path2, False
+    return im_path2
 
 if __name__ == '__main__':
     input_dir =''
