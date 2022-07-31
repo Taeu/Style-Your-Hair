@@ -1,17 +1,16 @@
 from typing import Set, List
 
+import os
+import random
+import shutil
 import argparse
 
 import torch
-import random
 import numpy as np
-import os
-from models.Embedding import Embedding
-from models.Alignment import Alignment
 
 from utils.kp_diff import flip_check
-
-import shutil
+from models.Alignment import Alignment
+from models.Embedding import Embedding
 
 
 def set_seed(seed: int) -> None:
