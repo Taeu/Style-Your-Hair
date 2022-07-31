@@ -1,3 +1,5 @@
+from typing import Set, List
+
 import argparse
 
 import torch
@@ -22,48 +24,45 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
 
 
-def is_reconstructed(args: argparse.Namespace) -> bool:
+def get_im_paths_not_embedded(im_paths: Set[str]) -> List[str]:
     W_embedding_dir = os.path.join(args.embedding_dir, "W+")
     FS_embedding_dir = os.path.join(args.embedding_dir, "FS")
 
-    im_name_1 = os.path.splitext(os.path.basename(args.im_path1))[0]
-    im_name_2 = os.path.splitext(os.path.basename(args.im_path2))[0]
+    im_paths_not_embedded = []
+    for im_path in im_paths:
+        assert os.path.isfile(im_path)
 
-    im1_W_exists = os.path.isfile(os.path.join(W_embedding_dir, f"{im_name_1}.npy"))
-    im2_W_exists = os.path.isfile(os.path.join(W_embedding_dir, f"{im_name_2}.npy"))
-    im1_FS_exists = os.path.isfile(os.path.join(FS_embedding_dir, f"{im_name_1}.npz"))
-    im2_FS_exists = os.path.isfile(os.path.join(FS_embedding_dir, f"{im_name_1}.npz"))
+        im_name = os.path.splitext(os.path.basename(im_path))[0]
+        W_exists = os.path.isfile(os.path.join(W_embedding_dir, f"{im_name}.npy"))
+        FS_exists = os.path.isfile(os.path.join(FS_embedding_dir, f"{im_name}.npz"))
 
-    return im1_W_exists and im2_W_exists and im1_FS_exists and im2_FS_exists
+        if not (W_exists and FS_exists):
+            im_paths_not_embedded.append(im_path)
+
+    return im_paths_not_embedded
 
 
 def main(args):
 
     set_seed(42)
 
-    if args.is_reconed:
-        assert is_reconstructed(args)
-    else:
-        args.embedding_dir = args.output_dir
-
     ii2s = Embedding(args)
 
     im_path1 = os.path.join(args.input_dir, args.im_path1)
     im_path2 = os.path.join(args.input_dir, args.im_path2)
-
     if args.flip_check:
         im_path2 = flip_check(im_path1, im_path2, args.device)
 
-    im_name_1 = os.path.splitext(os.path.basename(im_path1))[0]
-    im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]
-
     # Step 1 : Embedding source and target images into W+, FS space
-    im_set = {im_path1, im_path2}
-    if args.is_reconed == False:
-        ii2s.invert_images_in_W([*im_set])
-        ii2s.invert_images_in_FS([*im_set])
+    im_paths_not_embedded = get_im_paths_not_embedded({im_path1, im_path2})
+    if im_paths_not_embedded:
+        args.embedding_dir = args.output_dir
+        ii2s.invert_images_in_W(im_paths_not_embedded)
+        ii2s.invert_images_in_FS(im_paths_not_embedded)
 
     if args.save_all:
+        im_name_1 = os.path.splitext(os.path.basename(im_path1))[0]
+        im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]
         args.save_dir = os.path.join(args.output_dir, f'{im_name_1}_{im_name_2}_{args.version}')
         os.makedirs(args.save_dir, exist_ok = True)
         shutil.copy(im_path1, os.path.join(args.save_dir, im_name_1 + '.png'))
