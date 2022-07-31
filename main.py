@@ -113,7 +113,6 @@ if __name__ == "__main__":
     # utils
     parser.add_argument('--version', type=str, default='v1', help='version name')
     parser.add_argument('--save_all', action='store_true',help='save all output from whole process')
-    parser.add_argument('--is_reconed', action='store_true', help='if true, skip the embedding steps')
     parser.add_argument('--embedding_dir', type=str, default='./output/', help='embedding vector directory')
 
     # I/O arguments
