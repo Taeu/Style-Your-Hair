@@ -2,7 +2,7 @@
 Official Pytorch implementation of "Style Your Hair: Latent Optimization for Pose-Invariant Hairstyle Transfer via Local-Style-Aware Hair Alignment (ECCV 2022)"
 
 ![teaser](docs/assets/teaser.png)
-
+![qualitative result](docs/assets/sup-qualitative.png)
 > **Style Your Hair: Latent Optimization for Pose-Invariant Hairstyle Transfer via Local-Style-Aware Hair Alignment**<br/>
 [Taewoo Kim*](https://github.com/Taeu),
 [Chaeyeon Chung*](https://github.com/ChennyTech),
@@ -12,7 +12,7 @@ Official Pytorch implementation of "Style Your Hair: Latent Optimization for Pos
 [Jaegul Choo](https://sites.google.com/site/jaegulchoo/)<br/>
 `*` indicates equal contributions.
 
-> [arXiv](tobeupdated) | [BibTeX](#bibtex) |
+> [arXiv](https://arxiv.org/abs/2208.07765) | [BibTeX](#bibtex) |
 
 
 > **Abstract** Editing hairstyle is unique and challenging due to the complexity and delicacy of hairstyle.
@@ -44,7 +44,7 @@ pip install face_alignment face-recognition gdown ipython matplotlib
 
 
 ## Download example images
-Please download the [example images](tobeupdated).
+Please download the [example images](https://drive.google.com/drive/folders/1RxzbNcKb3bPDKccyo300YXCJ8EvZSaIL?usp=sharing).
 And put the images in `./ffhq_image/` folder.
 
 ## Getting Started  
@@ -64,7 +64,10 @@ This code borrows heavily from [Barbershop](https://github.com/ZPdesu/Barbershop
 ## BibTeX
 
 ```
-@misc{
-
+@article{kim2022style,
+  title={Style Your Hair: Latent Optimization for Pose-Invariant Hairstyle Transfer via Local-Style-Aware Hair Alignment},
+  author={Kim, Taewoo and Chung, Chaeyeon and Kim, Yoonseo and Park, Sunghyun and Kim, Kangyeol and Choo, Jaegul},
+  journal={arXiv preprint arXiv:2208.07765},
+  year={2022}
 }
 ```
