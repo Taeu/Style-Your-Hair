@@ -65,9 +65,9 @@ class Alignment(nn.Module):
         if self.opts.kp_loss:
             # self.setup_align_loss_builder(no_face=False)
             if self.opts.kp_type =='2D':
-                self.kp_extractor = face_alignment.FaceAlignment(face_alignment.LandmarksType._2D, flip_input=False, device=opts.device)
+                self.kp_extractor = face_alignment.FaceAlignment(face_alignment.LandmarksType.TWO_D, flip_input=False, device=opts.device)
             else:
-                self.kp_extractor = face_alignment.FaceAlignment(face_alignment.LandmarksType._3D, flip_input=False, device=opts.device)
+                self.kp_extractor = face_alignment.FaceAlignment(face_alignment.LandmarksType.THREE_D, flip_input=False, device=opts.device)
             for param in self.kp_extractor.face_alignment_net.parameters():
                 param.requires_grad = False
             self.l2 = torch.nn.MSELoss()

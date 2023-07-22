@@ -11,7 +11,7 @@ def flip_check(im_path1, im_path2, device):
 
     im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]
 
-    kp_extractor = face_alignment.FaceAlignment(face_alignment.LandmarksType._3D, flip_input=False, device=device)
+    kp_extractor = face_alignment.FaceAlignment(face_alignment.LandmarksType.THREE_D, flip_input=False, device=device)
 
     im1 = io.imread(im_path1)
     im2 = io.imread(im_path2)
