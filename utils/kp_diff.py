@@ -14,7 +14,22 @@ def flip_check(im_path1, im_path2, device):
     kp_extractor = face_alignment.FaceAlignment(face_alignment.LandmarksType.THREE_D, flip_input=False, device=device)
 
     im1 = io.imread(im_path1)
+    print(f"입력 이미지 텐서 : {im1.shape}")
+    if im1.shape[-1] != 3:
+        # 이미지의 채널 수를 변경할 때는 새로운 배열을 만들고, 적절한 채널을 선택하여 복사합니다.
+        # 이 예시에서는 마지막 채널을 제외한 채널들만 선택하여 (높이, 너비, 3) 형태로 변환합니다.
+        im1 = im1[:, :, :3]
+    print(f"입력 이미지 채널 변경 후 텐서 : {im1.shape}")
+
     im2 = io.imread(im_path2)
+    print(f"타겟 이미지 텐서 : {im2.shape}")
+    if im2.shape[-1] != 3:
+        # 이미지의 채널 수를 변경할 때는 새로운 배열을 만들고, 적절한 채널을 선택하여 복사합니다.
+        # 이 예시에서는 마지막 채널을 제외한 채널들만 선택하여 (높이, 너비, 3) 형태로 변환합니다.
+        im2 = im2[:, :, :3]
+    # im2 = np.expand_dims(im2, axis=0)
+    print(f"타겟 이미지 채널 변경 후 텐서 : {im2.shape}")
+
     im2_flip = im2[:, ::-1]
 
     start_time = time.time()
