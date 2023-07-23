@@ -11,6 +11,7 @@ import numpy as np
 from utils.kp_diff import flip_check
 from models.Alignment import Alignment
 from models.Embedding import Embedding
+from align_face import preprocessing_align_face
 
 
 def set_seed(seed: int) -> None:
@@ -42,6 +43,9 @@ def get_im_paths_not_embedded(im_paths: Set[str]) -> List[str]:
 
 
 def main(args):
+
+    # align_face.py 먼저 실행
+    preprocessing_align_face(args.unprocessed_dir, args.output_dir, args.output_size, args.seed, args.cache_dir, args.inter_method)
 
     set_seed(42)
 
@@ -76,6 +80,15 @@ def main(args):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Style Your Hair')
+
+    # Align Face
+    parser.add_argument('-unprocessed_dir', type=str, default='unprocessed', help='directory with unprocessed images')
+    parser.add_argument('-output_dir', type=str, default='ffhq_image', help='output directory')
+    parser.add_argument('-output_size', type=int, default=1024,
+                        help='size to downscale the input images to, must be power of 2')
+    parser.add_argument('-seed', type=int, help='manual seed to use')
+    parser.add_argument('-cache_dir', type=str, default='cache', help='cache directory for model weights')
+    parser.add_argument('-inter_method', type=str, default='bicubic')
 
     # flip
     parser.add_argument('--flip_check', action='store_true', help='image2 might be flipped')
