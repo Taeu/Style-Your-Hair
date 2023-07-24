@@ -433,6 +433,10 @@ class Alignment(nn.Module):
                 save_im = toPIL(I_G_0_1.squeeze().cpu())
                 if self.opts.save_all:
                     save_im.save(os.path.join(self.opts.save_dir, f'4_blend_and_alignment_img.png'))
+
+            print(f"self.opt.output_dir: {self.opts.output_dir}")
+            print(f"저장될 파일명: {im_name_1}_{im_name_2}.png")
+
             save_im.save(os.path.join(self.opts.output_dir, f'{im_name_1}_{im_name_2}.png'))
         else:
             pass

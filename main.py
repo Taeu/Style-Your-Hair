@@ -14,84 +14,23 @@ from models.Embedding import Embedding
 from align_face import preprocessing_align_face
 
 
-def set_seed(seed: int) -> None:
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    np.random.seed(seed)
-    random.seed(seed)
-
-
-def get_im_paths_not_embedded(im_paths: Set[str]) -> List[str]:
-    W_embedding_dir = os.path.join(args.embedding_dir, "W+")
-    FS_embedding_dir = os.path.join(args.embedding_dir, "FS")
-
-    im_paths_not_embedded = []
-    for im_path in im_paths:
-        assert os.path.isfile(im_path)
-
-        im_name = os.path.splitext(os.path.basename(im_path))[0]
-        W_exists = os.path.isfile(os.path.join(W_embedding_dir, f"{im_name}.npy"))
-        FS_exists = os.path.isfile(os.path.join(FS_embedding_dir, f"{im_name}.npz"))
-
-        if not (W_exists and FS_exists):
-            im_paths_not_embedded.append(im_path)
-
-    return im_paths_not_embedded
-
-
-def main(args):
-
-    # align_face.py 먼저 실행
-    preprocessing_align_face(args.unprocessed_dir, args.output_dir, args.output_size, args.seed, args.cache_dir, args.inter_method)
-
-    set_seed(42)
-
-    ii2s = Embedding(args)
-
-    im_path1 = os.path.join(args.input_dir, args.im_path1)
-    im_path2 = os.path.join(args.input_dir, args.im_path2)
-    if args.flip_check:
-        im_path2 = flip_check(im_path1, im_path2, args.device)
-
-    # Step 1 : Embedding source and target images into W+, FS space
-    im_paths_not_embedded = get_im_paths_not_embedded({im_path1, im_path2})
-    if im_paths_not_embedded:
-        args.embedding_dir = args.output_dir
-        ii2s.invert_images_in_W(im_paths_not_embedded)
-        ii2s.invert_images_in_FS(im_paths_not_embedded)
-
-    if args.save_all:
-        im_name_1 = os.path.splitext(os.path.basename(im_path1))[0]
-        im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]
-        args.save_dir = os.path.join(args.output_dir, f'{im_name_1}_{im_name_2}_{args.version}')
-        os.makedirs(args.save_dir, exist_ok = True)
-        shutil.copy(im_path1, os.path.join(args.save_dir, im_name_1 + '.png'))
-        shutil.copy(im_path2, os.path.join(args.save_dir, im_name_2 + '.png'))
-
-    # Step 2 : Hairstyle transfer using the above embedded vector or tensor
-    align = Alignment(args)
-    align.align_images(im_path1, im_path2, sign=args.sign, align_more_region=False, smooth=args.smooth)
-
-
-
-if __name__ == "__main__":
-
+args = None
+def main_program():
+    
+    global args
     parser = argparse.ArgumentParser(description='Style Your Hair')
 
     # Align Face
     parser.add_argument('-unprocessed_dir', type=str, default='unprocessed', help='directory with unprocessed images')
-    parser.add_argument('-output_dir', type=str, default='ffhq_image', help='output directory')
+    parser.add_argument('-tmp_output_dir', type=str, default='ffhq_image', help='output directory')
     parser.add_argument('-output_size', type=int, default=1024,
                         help='size to downscale the input images to, must be power of 2')
-    parser.add_argument('-seed', type=int, help='manual seed to use')
+    parser.add_argument('-tmp_seed', type=int, help='manual seed to use')
     parser.add_argument('-cache_dir', type=str, default='cache', help='cache directory for model weights')
     parser.add_argument('-inter_method', type=str, default='bicubic')
 
     # flip
-    parser.add_argument('--flip_check', action='store_true', help='image2 might be flipped')
+    parser.add_argument('--flip_check', action='store_true', default=True, help='image2 might be flipped')
 
     # warping and alignment
     parser.add_argument('--warp_front_part', default=True,
@@ -110,24 +49,23 @@ if __name__ == "__main__":
     parser.add_argument('--blend_with_align', default=True,
                         help='optimization of alignment process with blending')
 
-
     # hair related loss
-    parser.add_argument('--warp_loss_with_prev_list', nargs='+', help='select among delta_w, style_hair_slic_large',default=None)
+    parser.add_argument('--warp_loss_with_prev_list', nargs='+', help='select among delta_w, style_hair_slic_large',
+                        default=['delta_w', 'style_hair_slic_large'])
     parser.add_argument('--sp_hair_lambda', type=float, default=5.0, help='Super pixel hair loss when embedding')
 
-
     # utils
-    parser.add_argument('--version', type=str, default='v1', help='version name')
-    parser.add_argument('--save_all', action='store_true',help='save all output from whole process')
+    parser.add_argument('--version', type=str, default='final', help='version name')
+    parser.add_argument('--save_all', action='store_true', default=True, help='save all output from whole process')
     parser.add_argument('--embedding_dir', type=str, default='./output/', help='embedding vector directory')
 
     # I/O arguments
-    parser.add_argument('--input_dir', type=str, default='./image/',
+    parser.add_argument('--input_dir', type=str, default='./ffhq_image/',
                         help='The directory of the images to be inverted')
-    parser.add_argument('--output_dir', type=str, default='./output/',
+    parser.add_argument('--output_dir', type=str, default='./style_your_hair_output/',
                         help='The directory to save the output images')
-    parser.add_argument('--im_path1', type=str, default='16.png', help='Identity image')
-    parser.add_argument('--im_path2', type=str, default='15.png', help='Structure image')
+    parser.add_argument('--im_path1', type=str, default='source2.png', help='Identity image')
+    parser.add_argument('--im_path2', type=str, default='target8.png', help='Structure image')
     parser.add_argument('--sign', type=str, default='realistic', help='realistic or fidelity results')
     parser.add_argument('--smooth', type=int, default=5, help='dilation and erosion parameter')
 
@@ -173,3 +111,73 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(args)
+
+
+def set_seed(seed: int) -> None:
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+
+
+def get_im_paths_not_embedded(im_paths: Set[str]) -> List[str]:
+    W_embedding_dir = os.path.join(args.embedding_dir, "W+")
+    FS_embedding_dir = os.path.join(args.embedding_dir, "FS")
+
+    im_paths_not_embedded = []
+    for im_path in im_paths:
+        assert os.path.isfile(im_path)
+
+        im_name = os.path.splitext(os.path.basename(im_path))[0]
+        W_exists = os.path.isfile(os.path.join(W_embedding_dir, f"{im_name}.npy"))
+        FS_exists = os.path.isfile(os.path.join(FS_embedding_dir, f"{im_name}.npz"))
+
+        if not (W_exists and FS_exists):
+            im_paths_not_embedded.append(im_path)
+
+    return im_paths_not_embedded
+
+
+def main(args):
+    # align_face.py 먼저 실행
+    preprocessing_align_face(args.unprocessed_dir, args.tmp_output_dir, args.output_size, args.seed, args.cache_dir,
+                             args.inter_method)
+
+    set_seed(42)
+
+    ii2s = Embedding(args)
+
+    im_path1 = os.path.join(args.input_dir, args.im_path1)
+    print(f"im_path1:  {im_path1}")
+    im_path2 = os.path.join(args.input_dir, args.im_path2)
+    print(f"im_path2:  {im_path2}")
+    if args.flip_check:
+        im_path2 = flip_check(im_path1, im_path2, args.device)
+
+    # Step 1 : Embedding source and target images into W+, FS space
+    im_paths_not_embedded = get_im_paths_not_embedded({im_path1, im_path2})
+    if im_paths_not_embedded:
+        args.embedding_dir = args.output_dir
+        ii2s.invert_images_in_W(im_paths_not_embedded)
+        ii2s.invert_images_in_FS(im_paths_not_embedded)
+
+    if args.save_all:
+        im_name_1 = os.path.splitext(os.path.basename(im_path1))[0]
+        im_name_2 = os.path.splitext(os.path.basename(im_path2))[0]
+        args.save_dir = os.path.join(args.output_dir, f'{im_name_1}_{im_name_2}_{args.version}')
+        os.makedirs(args.save_dir, exist_ok=True)
+        shutil.copy(im_path1, os.path.join(args.save_dir, im_name_1 + '.png'))
+        shutil.copy(im_path2, os.path.join(args.save_dir, im_name_2 + '.png'))
+
+    # Step 2 : Hairstyle transfer using the above embedded vector or tensor
+    align = Alignment(args)
+    align.align_images(im_path1, im_path2, sign=args.sign, align_more_region=False, smooth=args.smooth)
+
+
+if __name__ == "__main__":
+    main_program()
+
+
