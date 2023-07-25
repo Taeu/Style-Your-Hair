@@ -15,7 +15,7 @@ from align_face import preprocessing_align_face
 
 
 args = None
-def main_program():
+def main_program(request):
     
     global args
     parser = argparse.ArgumentParser(description='Style Your Hair')
@@ -60,12 +60,12 @@ def main_program():
     parser.add_argument('--embedding_dir', type=str, default='./output/', help='embedding vector directory')
 
     # I/O arguments
-    parser.add_argument('--input_dir', type=str, default='./ffhq_image/',
+    parser.add_argument('--input_dir', type=str, default=request["input_dir"],
                         help='The directory of the images to be inverted')
-    parser.add_argument('--output_dir', type=str, default='./style_your_hair_output/',
+    parser.add_argument('--output_dir', type=str, default=request["output_dir"],
                         help='The directory to save the output images')
-    parser.add_argument('--im_path1', type=str, default='source2.png', help='Identity image')
-    parser.add_argument('--im_path2', type=str, default='target8.png', help='Structure image')
+    parser.add_argument('--im_path1', type=str, default=request["im_path1"], help='Identity image')
+    parser.add_argument('--im_path2', type=str, default=request["im_path2"], help='Structure image')
     parser.add_argument('--sign', type=str, default='realistic', help='realistic or fidelity results')
     parser.add_argument('--smooth', type=int, default=5, help='dilation and erosion parameter')
 
@@ -178,6 +178,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    main_program()
-
-
+    main_program(request)
