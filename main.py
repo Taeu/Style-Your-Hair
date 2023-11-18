@@ -1,5 +1,10 @@
-from typing import Set, List
+from pathlib import Path
+import sys
+parent = Path(__file__).parents
+path_root = parent[1]
+sys.path.append(str(path_root))
 
+from typing import Set, List
 import os
 import random
 import shutil
@@ -12,6 +17,8 @@ from utils.kp_diff import flip_check
 from models.Alignment import Alignment
 from models.Embedding import Embedding
 
+from utils.face_cropper import face_crop
+
 
 def set_seed(seed: int) -> None:
     torch.manual_seed(seed)
@@ -23,7 +30,7 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
 
 
-def get_im_paths_not_embedded(im_paths: Set[str]) -> List[str]:
+def get_im_paths_not_embedded(im_paths: Set[str], args) -> List[str]:
     W_embedding_dir = os.path.join(args.embedding_dir, "W+")
     FS_embedding_dir = os.path.join(args.embedding_dir, "FS")
 
@@ -42,9 +49,14 @@ def get_im_paths_not_embedded(im_paths: Set[str]) -> List[str]:
 
 
 def main(args):
-
+    im_path1 = os.path.join(args.input_dir, args.im_path1)
+    im_path2 = os.path.join(args.input_dir, args.im_path2)
+    assert os.path.isfile(im_path1), f"there is no any file in {im_path1}"
+    assert os.path.isfile(im_path2), f"there is no any file in {im_path2}"
+    # Step 1 : check and standardize image1 and check which style of image1 is would better fit
+    face_crop(im_path1, im_path2)
     set_seed(42)
-
+    
     ii2s = Embedding(args)
 
     im_path1 = os.path.join(args.input_dir, args.im_path1)
@@ -52,7 +64,7 @@ def main(args):
     if args.flip_check:
         im_path2 = flip_check(im_path1, im_path2, args.device)
 
-    # Step 1 : Embedding source and target images into W+, FS space
+    # Step 2 : Embedding source and target images into W+, FS space
     im_paths_not_embedded = get_im_paths_not_embedded({im_path1, im_path2})
     if im_paths_not_embedded:
         args.embedding_dir = args.output_dir
@@ -67,11 +79,9 @@ def main(args):
         shutil.copy(im_path1, os.path.join(args.save_dir, im_name_1 + '.png'))
         shutil.copy(im_path2, os.path.join(args.save_dir, im_name_2 + '.png'))
 
-    # Step 2 : Hairstyle transfer using the above embedded vector or tensor
+    # Step 3 : Hairstyle transfer using the above embedded vector or tensor
     align = Alignment(args)
     align.align_images(im_path1, im_path2, sign=args.sign, align_more_region=False, smooth=args.smooth)
-
-
 
 if __name__ == "__main__":
 
