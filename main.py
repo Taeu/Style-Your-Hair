@@ -65,7 +65,7 @@ def main(args):
         im_path2 = flip_check(im_path1, im_path2, args.device)
 
     # Step 2 : Embedding source and target images into W+, FS space
-    im_paths_not_embedded = get_im_paths_not_embedded({im_path1, im_path2})
+    im_paths_not_embedded = get_im_paths_not_embedded({im_path1, im_path2}, args)
     if im_paths_not_embedded:
         args.embedding_dir = args.output_dir
         ii2s.invert_images_in_W(im_paths_not_embedded)
@@ -123,8 +123,8 @@ if __name__ == "__main__":
                         help='The directory of the images to be inverted')
     parser.add_argument('--output_dir', type=str, default='./output/',
                         help='The directory to save the output images')
-    parser.add_argument('--im_path1', type=str, default='16.png', help='Identity image')
-    parser.add_argument('--im_path2', type=str, default='15.png', help='Structure image')
+    parser.add_argument('--im_path1', type=str, default='01.png', help='Identity image')
+    parser.add_argument('--im_path2', type=str, default='02.png', help='Structure image')
     parser.add_argument('--sign', type=str, default='realistic', help='realistic or fidelity results')
     parser.add_argument('--smooth', type=int, default=5, help='dilation and erosion parameter')
 
