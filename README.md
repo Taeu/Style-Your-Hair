@@ -12,7 +12,7 @@ Official Pytorch implementation of "Style Your Hair: Latent Optimization for Pos
 [Jaegul Choo](https://sites.google.com/site/jaegulchoo/)<br/>
 `*` indicates equal contributions.
 
-> [arXiv](https://arxiv.org/abs/2208.07765) | [BibTeX](#bibtex) |
+> [arXiv](https://arxiv.org/abs/2208.07765) | [BibTeX](#bibtex) | [![Replicate](https://replicate.com/cjwbw/style-your-hair/badge)](https://replicate.com/cjwbw/style-your-hair)
 
 
 > **Abstract** Editing hairstyle is unique and challenging due to the complexity and delicacy of hairstyle.

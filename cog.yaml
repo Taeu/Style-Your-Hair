@@ -1,0 +1,26 @@
+build:
+  cuda: "10.2"
+  gpu: true
+  python_version: "3.8"
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+    - "ninja-build"
+  python_packages:
+    - "cmake==3.24.1"
+    - "ipython==7.21.0"
+    - "matplotlib==3.5.3"
+    - "torch==1.9.1"
+    - "torchvision==0.10.1"
+    - "gdown==4.5.1"
+
+  run:
+    - pip install face-recognition
+    - pip install face-alignment
+    - mkdir -p /root/.cache/torch/hub/checkpoints/ && wget --output-document "/root/.cache/torch/hub/checkpoints/depth-6c4283c0e0.zip" "https://www.adrianbulat.com/downloads/python-fan/depth-6c4283c0e0.zip"
+    - mkdir -p /root/.cache/torch/hub/checkpoints/ && wget --output-document "/root/.cache/torch/hub/checkpoints/3DFAN4-4a694010b9.zip" "https://www.adrianbulat.com/downloads/python-fan/3DFAN4-4a694010b9.zip"
+    - mkdir -p /root/.cache/torch/hub/checkpoints/ && wget --output-document "/root/.cache/torch/hub/checkpoints/s3fd-619a316812.pth" "https://www.adrianbulat.com/downloads/python-fan/s3fd-619a316812.pth"
+    - mkdir -p /root/.cache/torch/hub/checkpoints/ && wget --output-document "/root/.cache/torch/hub/checkpoints/vgg16-397923af.pth" "https://download.pytorch.org/models/vgg16-397923af.pth"
+    - mkdir -p /root/.cache/torch/hub/checkpoints/ && wget --output-document "/root/.cache/torch/hub/checkpoints/resnet18-5c106cde.pth" "https://download.pytorch.org/models/resnet18-5c106cde.pth"
+
+predict: "predict.py:Predictor"
